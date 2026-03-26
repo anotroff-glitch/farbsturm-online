@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🎴 Farbsturm – Online Kartenspiel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@400;600;700&display=swap');
+
+  :root {
+    --red: #e74c3c; --red-dark: #c0392b;
+    --blue: #3498db; --blue-dark: #2980b9;
+    --green: #2ecc71; --green-dark: #27ae60;
+    --yellow: #f1c40f; --yellow-dark: #d4ac0f;
+    --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+    --text: #e6edf3; --text2: #8b949e;
+    --accent: #58a6ff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== BACKGROUND ===== */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(88, 166, 255, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(231, 76, 60, 0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 60% 80%, rgba(46, 204, 113, 0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== SCREENS ===== */
+  .screen {
+    display: none;
+    position: relative;
+    z-index: 1;
+  }
+  .screen.active { display: flex; }
+
+  /* ===== MENU SCREEN ===== */
+  #menuScreen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    gap: 20px;
+  }
+
+  .logo {
+    font-family: 'Fredoka', sans-serif;
+    font-size: clamp(42px, 10vw, 72px);
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--red), var(--yellow), var(--green), var(--blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 4px 20px rgba(88, 166, 255, 0.3));
+    animation: logoFloat 3s ease-in-out infinite alternate;
+    text-align: center;
+  }
+
+  @keyframes logoFloat {
+    from { transform: translateY(0); }
+    to { transform: translateY(-8px); }
+  }
+
+  .subtitle {
+    color: var(--text2);
+    font-size: 15px;
+    margin-top: -10px;
+    margin-bottom: 10px;
+  }
+
+  .menu-box {
+    background: var(--bg2);
+    border: 1px solid var(--bg3);
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .menu-box h2 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: var(--accent);
+  }
+
+  .input-group {
+    margin-bottom: 14px;
+  }
+
+  .input-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 2px solid var(--bg3);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+
+  input[type="text"]::placeholder {
+    color: #484f58;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+  }
+
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #1f6feb);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(88, 166, 255, 0.25);
+  }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 6px 24px rgba(88, 166, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(46, 204, 113, 0.25);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, var(--red), var(--red-dark));
+    color: #fff;
+  }
+
+  .btn-warning {
+    background: linear-gradient(135deg, var(--yellow), var(--yellow-dark));
+    color: #1a1a2e;
+  }
+
+  .btn-small {
+    padding: 8px 16px;
+    font-size: 13px;
+    width: auto;
+  }
+
+  .divider {
+    text-align: center;
+    color: var(--text2);
+    font-size: 13px;
+    margin: 10px 0;
+    position: relative;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 35%;
+    height: 1px;
+    background: var(--bg3);
+  }
+  .divider::before { left: 0; }
+  .divider::after { right: 0; }
+
+  .error-msg {
+    color: var(--red);
+    font-size: 13px;
+    margin-top: 8px;
+    min-height: 20px;
+  }
+
+  /* ===== LOBBY SCREEN ===== */
+  #lobbyScreen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    gap: 20px;
+  }
+
+  .room-code {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 36px;
+    letter-spacing: 8px;
+    color: var(--accent);
+    background: var(--bg2);
+    padding: 16px 32px;
+    border-radius: 12px;
+    border: 2px dashed var(--bg3);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: all;
+  }
+  .room-code:hover {
+    border-color: var(--accent);
+    background: rgba(88, 166, 255, 0.08);
+  }
+
+  .room-code-hint {
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .player-list {
+    list-style: none;
+    width: 100%;
+    max-width: 350px;
+  }
+
+  .player-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg2);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 16px;
+    border: 1px solid var(--bg3);
+  }
+
+  .player-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .waiting-dots::after {
+    content: '';
+    animation: dots 1.5s steps(4) infinite;
+  }
+  @keyframes dots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+  }
+
+  /* ===== GAME SCREEN ===== */
+  #gameScreen {
+    flex-direction: column;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--bg3);
+    z-index: 10;
+    flex-shrink: 0;
+  }
+
+  .game-header .room-info {
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .game-header .room-info span {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Opponents */
+  .opponents {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .opponent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 14px;
+    background: var(--bg2);
+    border-radius: 12px;
+    border: 2px solid var(--bg3);
+    min-width: 80px;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .opponent.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);
+  }
+
+  .opponent.has-one-card {
+    border-color: var(--red);
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(231, 76, 60, 0); }
+  }
+
+  .opponent-name {
+    font-size: 12px;
+    font-weight: 600;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .opponent-cards {
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .challenge-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 0.8s infinite;
+  }
+
+  .opponent.has-one-card:not(.said-farbsturm) .challenge-btn {
+    display: flex;
+  }
+
+  /* Table area */
+  .table-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 10px;
+    min-height: 0;
+  }
+
+  .direction-indicator {
+    font-size: 28px;
+    color: var(--text2);
+    transition: transform 0.4s;
+  }
+  .direction-indicator.reversed { transform: scaleX(-1); }
+
+  .pile-area {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .deck-pile {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .deck-pile:hover { transform: translateY(-4px); }
+  .deck-pile:active { transform: translateY(0); }
+
+  .deck-count {
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    background: var(--bg2);
+    border: 1px solid var(--bg3);
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .current-color-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+    position: absolute;
+    top: -6px;
+    right: -6px;
+  }
+
+  .draw-stack-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--red);
+    color: #fff;
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Fredoka', sans-serif;
+    display: none;
+  }
+
+  .game-message {
+    font-size: 14px;
+    color: var(--text2);
+    text-align: center;
+    min-height: 24px;
+    padding: 0 12px;
+  }
+  .game-message.highlight {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Action buttons */
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 12px;
+  }
+
+  /* My hand */
+  .my-hand-wrapper {
+    background: var(--bg2);
+    border-top: 1px solid var(--bg3);
+    padding: 10px 8px 14px;
+    flex-shrink: 0;
+  }
+
+  .hand-label {
+    font-size: 11px;
+    color: var(--text2);
+    text-align: center;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .my-hand {
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 2px;
+    padding: 4px 8px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ===== CARDS ===== */
+  .card {
+    width: 60px;
+    height: 88px;
+    border-radius: 10px;
+    position: relative;
+    flex-shrink: 0;
+    cursor: default;
+    transition: transform 0.2s, box-shadow 0.2s, margin-top 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .card-back {
+    background: linear-gradient(135deg, #2d1b69, #1a1a4e);
+    border: 2px solid #4a3b8e;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .card-back::after {
+    content: '🎴';
+    font-size: 24px;
+  }
+
+  .card-red { background: linear-gradient(145deg, #ff6b6b, var(--red-dark)); border: 2px solid #ff8a8a; }
+  .card-blue { background: linear-gradient(145deg, #74b9ff, var(--blue-dark)); border: 2px solid #a0cfff; }
+  .card-green { background: linear-gradient(145deg, #55efc4, var(--green-dark)); border: 2px solid #81f5d8; }
+  .card-yellow { background: linear-gradient(145deg, #ffeaa7, var(--yellow-dark)); border: 2px solid #fff3c4; color: #5a4e00; }
+  .card-wild {
+    background: linear-gradient(135deg, var(--red), var(--blue), var(--green), var(--yellow));
+    border: 2px solid rgba(255,255,255,0.4);
+  }
+
+  .card-value {
+    font-size: 26px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    color: #fff;
+    line-height: 1;
+  }
+  .card-yellow .card-value { color: #5a4e00; text-shadow: 1px 1px 2px rgba(255,255,255,0.3); }
+
+  .card-type-icon {
+    font-size: 14px;
+    position: absolute;
+    top: 5px;
+    left: 6px;
+  }
+
+  .card-corner {
+    position: absolute;
+    bottom: 5px;
+    right: 6px;
+    font-size: 10px;
+    opacity: 0.7;
+  }
+
+  /* Hand cards interactions */
+  .my-hand .card {
+    margin: 0 -4px;
+  }
+
+  .my-hand .card.playable {
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(88, 166, 255, 0.4);
+    animation: cardGlow 1.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes cardGlow {
+    from { box-shadow: 0 0 8px rgba(88, 166, 255, 0.3); }
+    to { box-shadow: 0 0 18px rgba(88, 166, 255, 0.6); }
+  }
+
+  .my-hand .card.playable:hover {
+    transform: translateY(-14px) scale(1.05);
+    z-index: 20;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .my-hand .card.playable:active {
+    transform: translateY(-8px) scale(1.02);
+  }
+
+  .discard-card {
+    width: 72px;
+    height: 104px;
+    font-size: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    animation: cardDrop 0.3s ease-out;
+  }
+
+  .discard-card .card-value { font-size: 30px; }
+
+  @keyframes cardDrop {
+    from { transform: scale(1.3) rotate(5deg); opacity: 0.5; }
+    to { transform: scale(1) rotate(0); opacity: 1; }
+  }
+
+  /* ===== COLOR PICKER MODAL ===== */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.active { display: flex; }
+
+  .color-picker {
+    background: var(--bg2);
+    border: 1px solid var(--bg3);
+    border-radius: 20px;
+    padding: 28px;
+    text-align: center;
+  }
+
+  .color-picker h3 {
+    font-family: 'Fredoka', sans-serif;
+    margin-bottom: 20px;
+    font-size: 18px;
+  }
+
+  .color-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .color-option {
+    width: 70px;
+    height: 70px;
+    border-radius: 16px;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+  .color-option:hover {
+    transform: scale(1.1);
+    border-color: #fff;
+  }
+  .color-option.co-red { background: var(--red); }
+  .color-option.co-blue { background: var(--blue); }
+  .color-option.co-green { background: var(--green); }
+  .color-option.co-yellow { background: var(--yellow); }
+
+  /* ===== TOAST ===== */
+  .toast-container {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: var(--bg2);
+    border: 1px solid var(--bg3);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 14px;
+    color: var(--text);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    animation: toastIn 0.3s ease-out, toastOut 0.3s 2.2s ease-in forwards;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; }
+    to { opacity: 0; transform: translateY(-10px); }
+  }
+
+  /* ===== WINNER OVERLAY ===== */
+  .winner-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 150;
+    backdrop-filter: blur(6px);
+  }
+  .winner-overlay.active { display: flex; }
+
+  .winner-box {
+    text-align: center;
+    animation: winnerPop 0.5s ease-out;
+  }
+
+  @keyframes winnerPop {
+    from { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.1); }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .winner-box h1 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 42px;
+    background: linear-gradient(135deg, var(--yellow), #ff8a00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .winner-box .winner-name {
+    font-size: 28px;
+    font-family: 'Fredoka', sans-serif;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  .winner-box .trophy { font-size: 64px; margin-bottom: 16px; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 500px) {
+    .card { width: 50px; height: 74px; border-radius: 8px; }
+    .card-value { font-size: 20px; }
+    .card-type-icon { font-size: 11px; top: 3px; left: 4px; }
+    .card-corner { font-size: 8px; bottom: 3px; right: 4px; }
+    .discard-card { width: 62px; height: 90px; }
+    .discard-card .card-value { font-size: 26px; }
+    .opponent { padding: 6px 10px; min-width: 70px; }
+    .logo { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== MENU SCREEN ===== -->
+<div id="menuScreen" class="screen active">
+  <div class="logo">Farbsturm</div>
+  <div class="subtitle">Das bunte Kartenspiel für Freunde</div>
+
+  <div class="menu-box">
+    <h2>🎮 Spielen</h2>
+    <div class="input-group">
+      <label>Dein Name</label>
+      <input type="text" id="playerName" placeholder="Name eingeben..." maxlength="16" autocomplete="off">
+    </div>
+    <button class="btn btn-primary" id="createBtn">Neuen Raum erstellen</button>
+    <div class="divider">oder</div>
+    <div class="input-group">
+      <label>Raum-Code</label>
+      <input type="text" id="roomCode" placeholder="z.B. ABC12" maxlength="5" autocomplete="off" style="text-transform:uppercase; letter-spacing:4px; text-align:center; font-size:20px;">
+    </div>
+    <button class="btn btn-success" id="joinBtn">Raum beitreten</button>
+    <div class="error-msg" id="menuError"></div>
+  </div>
+
+  <div style="color: var(--text2); font-size: 12px; max-width: 350px; text-align: center; line-height: 1.6;">
+    Erstelle einen Raum und teile den Code mit deinen Freunden.<br>2–4 Spieler · Im Browser · Keine Installation
+  </div>
+</div>
+
+<!-- ===== LOBBY SCREEN ===== -->
+<div id="lobbyScreen" class="screen">
+  <div class="logo" style="font-size: 36px;">Farbsturm</div>
+
+  <div style="text-align:center;">
+    <div class="room-code-hint">Raumcode (zum Kopieren klicken):</div>
+    <div class="room-code" id="lobbyCode" title="Klicken zum Kopieren"></div>
+  </div>
+
+  <div class="menu-box">
+    <h2>👥 Spieler <span id="playerCount"></span></h2>
+    <ul class="player-list" id="playerList"></ul>
+    <div style="text-align: center; margin-top: 12px;">
+      <span class="waiting-dots" style="color: var(--text2); font-size: 13px;" id="waitingText">Warte auf Spieler</span>
+    </div>
+    <button class="btn btn-success" id="startGameBtn" style="margin-top:16px; display:none;">🚀 Spiel starten!</button>
+  </div>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="gameScreen" class="screen">
+  <div class="game-header">
+    <div class="room-info">Raum: <span id="gameRoomCode"></span></div>
+    <div class="direction-indicator" id="dirIndicator">🔄</div>
+    <button class="btn btn-danger btn-small" id="farbsturmBtn" style="display:none;">🎴 FARBSTURM!</button>
+  </div>
+
+  <div class="opponents" id="opponents"></div>
+
+  <div class="table-area">
+    <div class="game-message" id="gameMessage"></div>
+
+    <div class="pile-area">
+      <div class="deck-pile" id="deckPile" title="Karte ziehen">
+        <div class="card card-back"></div>
+        <div class="deck-count" id="deckCount">0</div>
+        <div class="draw-stack-badge" id="drawStackBadge"></div>
+      </div>
+
+      <div style="position: relative;">
+        <div id="discardPile"></div>
+        <div class="current-color-dot" id="colorDot"></div>
+      </div>
+    </div>
+
+    <div class="action-buttons" id="actionButtons"></div>
+  </div>
+
+  <div class="my-hand-wrapper">
+    <div class="hand-label">Deine Karten: <span id="myCardCount">0</span></div>
+    <div class="my-hand" id="myHand"></div>
+  </div>
+</div>
+
+<!-- ===== COLOR PICKER ===== -->
+<div class="modal-overlay" id="colorPickerModal">
+  <div class="color-picker">
+    <h3>🎨 Farbe wählen</h3>
+    <div class="color-options">
+      <div class="color-option co-red" data-color="red">🔴</div>
+      <div class="color-option co-blue" data-color="blue">🔵</div>
+      <div class="color-option co-green" data-color="green">🟢</div>
+      <div class="color-option co-yellow" data-color="yellow">🟡</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== WINNER OVERLAY ===== -->
+<div class="winner-overlay" id="winnerOverlay">
+  <div class="winner-box">
+    <div class="trophy">🏆</div>
+    <h1>GEWONNEN!</h1>
+    <div class="winner-name" id="winnerName"></div>
+    <button class="btn btn-primary" id="playAgainBtn" style="width:auto; display:none;">🔄 Nochmal spielen</button>
+    <button class="btn btn-small" id="backToMenuBtn" style="width:auto; margin-top: 12px; background: var(--bg3); color: var(--text);">Zurück zum Menü</button>
+  </div>
+</div>
+
+<!-- ===== TOASTS ===== -->
+<div class="toast-container" id="toasts"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ============ CONNECTION ============
+const socket = io();
+let currentRoom = null;
+let isHost = false;
+let pendingWildCard = null;
+let myId = null;
+let canPlayDrawnCard = false;
+let currentState = null;
+
+socket.on('connect', () => { myId = socket.id; });
+
+// ============ DOM ELEMENTS ============
+const $ = id => document.getElementById(id);
+const screens = {
+  menu: $('menuScreen'),
+  lobby: $('lobbyScreen'),
+  game: $('gameScreen')
+};
+
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[name].classList.add('active');
+}
+
+// ============ TOAST ============
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  $('toasts').appendChild(toast);
+  setTimeout(() => toast.remove(), 2600);
+}
+
+// ============ CARD RENDERING ============
+const CARD_SYMBOLS = {
+  skip: '⊘',
+  reverse: '⇄',
+  '+2': '+2',
+  wild: '★',
+  '+4': '+4'
+};
+
+function createCardEl(card, extraClass = '') {
+  const div = document.createElement('div');
+  const colorClass = card.color ? `card-${card.color}` : 'card-wild';
+  div.className = `card ${colorClass} ${extraClass}`.trim();
+  div.dataset.cardId = card.id;
+
+  let displayValue = '';
+  if (card.type === 'number') {
+    displayValue = card.value;
+  } else {
+    displayValue = CARD_SYMBOLS[card.value] || card.value;
+  }
+
+  let typeIcon = '';
+  if (card.type === 'skip') typeIcon = '⊘';
+  else if (card.type === 'reverse') typeIcon = '⇄';
+  else if (card.type === 'draw2') typeIcon = '+2';
+  else if (card.type === 'wild') typeIcon = '★';
+  else if (card.type === 'wild_draw4') typeIcon = '+4';
+
+  div.innerHTML = `
+    <span class="card-type-icon">${typeIcon || ''}</span>
+    <span class="card-value">${displayValue}</span>
+    <span class="card-corner">${typeIcon || displayValue}</span>
+  `;
+  return div;
+}
+
+function getColorHex(color) {
+  const map = { red: '#e74c3c', blue: '#3498db', green: '#2ecc71', yellow: '#f1c40f' };
+  return map[color] || '#888';
+}
+
+const PLAYER_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
+const PLAYER_EMOJIS = ['🦊', '🐻', '🐸', '🐱'];
+
+// ============ MENU ============
+$('createBtn').addEventListener('click', () => {
+  const name = $('playerName').value.trim();
+  if (!name) { $('menuError').textContent = 'Bitte gib einen Namen ein!'; return; }
+  $('menuError').textContent = '';
+  socket.emit('createRoom', name, (res) => {
+    if (res.success) {
+      currentRoom = res.code;
+      showScreen('lobby');
+    } else {
+      $('menuError').textContent = res.error;
+    }
+  });
+});
+
+$('joinBtn').addEventListener('click', () => {
+  const name = $('playerName').value.trim();
+  const code = $('roomCode').value.trim().toUpperCase();
+  if (!name) { $('menuError').textContent = 'Bitte gib einen Namen ein!'; return; }
+  if (!code) { $('menuError').textContent = 'Bitte gib einen Raum-Code ein!'; return; }
+  $('menuError').textContent = '';
+  socket.emit('joinRoom', { name, code }, (res) => {
+    if (res.success) {
+      currentRoom = res.code;
+      showScreen('lobby');
+    } else {
+      $('menuError').textContent = res.error;
+    }
+  });
+});
+
+// Enter key support
+$('playerName').addEventListener('keydown', e => { if (e.key === 'Enter') $('createBtn').click(); });
+$('roomCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('joinBtn').click(); });
+
+// ============ LOBBY ============
+socket.on('lobby', (data) => {
+  $('lobbyCode').textContent = data.code;
+  $('playerCount').textContent = `(${data.players.length}/4)`;
+  isHost = data.isHost;
+
+  const list = $('playerList');
+  list.innerHTML = '';
+  data.players.forEach((p, i) => {
+    const li = document.createElement('li');
+    const avatar = document.createElement('div');
+    avatar.className = 'player-avatar';
+    avatar.style.background = PLAYER_COLORS[i];
+    avatar.textContent = PLAYER_EMOJIS[i];
+    li.appendChild(avatar);
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = p.name + (p.id === myId ? ' (Du)' : '') + (i === 0 ? ' 👑' : '');
+    li.appendChild(nameSpan);
+    list.appendChild(li);
+  });
+
+  $('startGameBtn').style.display = isHost && data.players.length >= 2 ? 'block' : 'none';
+  $('waitingText').textContent = data.players.length < 2
+    ? 'Warte auf Spieler'
+    : isHost ? 'Bereit! Du kannst starten.' : 'Warte auf den Host...';
+});
+
+$('lobbyCode').addEventListener('click', () => {
+  const code = $('lobbyCode').textContent;
+  navigator.clipboard?.writeText(code);
+  showToast('Code kopiert: ' + code);
+});
+
+$('startGameBtn').addEventListener('click', () => {
+  socket.emit('startGame', currentRoom);
+});
+
+// ============ GAME ============
+socket.on('gameState', (state) => {
+  currentState = state;
+  showScreen('game');
+  renderGame(state);
+});
+
+function renderGame(state) {
+  // Room code
+  $('gameRoomCode').textContent = state.roomCode;
+
+  // Direction
+  const dirEl = $('dirIndicator');
+  dirEl.textContent = state.direction === 1 ? '🔄' : '🔃';
+  dirEl.className = 'direction-indicator' + (state.direction === -1 ? ' reversed' : '');
+
+  // Opponents
+  const oppContainer = $('opponents');
+  oppContainer.innerHTML = '';
+  state.players.forEach((p, i) => {
+    if (p.isMe) return;
+    const div = document.createElement('div');
+    let cls = 'opponent';
+    if (i === state.currentPlayer) cls += ' active';
+    if (p.cardCount === 1) cls += ' has-one-card';
+    if (p.saidFarbsturm) cls += ' said-farbsturm';
+    div.className = cls;
+
+    div.innerHTML = `
+      <div class="player-avatar" style="background:${PLAYER_COLORS[i]}; width:28px; height:28px; font-size:14px;">${PLAYER_EMOJIS[i]}</div>
+      <div class="opponent-name">${p.name}</div>
+      <div class="opponent-cards">${p.cardCount} Karte${p.cardCount !== 1 ? 'n' : ''}</div>
+      <button class="challenge-btn" onclick="challengePlayer('${p.id}')" title="Hat nicht FARBSTURM gesagt!">❗</button>
+    `;
+    oppContainer.appendChild(div);
+  });
+
+  // Discard pile
+  const discardArea = $('discardPile');
+  discardArea.innerHTML = '';
+  if (state.topCard) {
+    const el = createCardEl(state.topCard, 'discard-card');
+    discardArea.appendChild(el);
+  }
+
+  // Color dot
+  $('colorDot').style.background = getColorHex(state.currentColor);
+
+  // Deck count
+  $('deckCount').textContent = state.deckCount;
+
+  // Draw stack
+  const badge = $('drawStackBadge');
+  if (state.drawStack > 0) {
+    badge.style.display = 'block';
+    badge.textContent = `+${state.drawStack}`;
+  } else {
+    badge.style.display = 'none';
+  }
+
+  // Game message
+  const msgEl = $('gameMessage');
+  if (state.isMyTurn) {
+    msgEl.textContent = state.drawStack > 0
+      ? `Du bist dran! +${state.drawStack} ziehen oder kontern!`
+      : 'Du bist dran! Spiele eine Karte oder ziehe.';
+    msgEl.className = 'game-message highlight';
+  } else {
+    const cp = state.players[state.currentPlayer];
+    msgEl.textContent = `${cp?.name || '?'} ist dran...`;
+    msgEl.className = 'game-message';
+  }
+
+  // FARBSTURM button
+  const me = state.players.find(p => p.isMe);
+  $('farbsturmBtn').style.display = (me && me.cardCount <= 2 && !me.saidFarbsturm && state.state === 'playing')
+    ? 'inline-flex' : 'none';
+
+  // My hand
+  const hand = $('myHand');
+  hand.innerHTML = '';
+  $('myCardCount').textContent = state.myHand.length;
+
+  // Sort hand by color then value
+  const colorOrder = { red: 0, blue: 1, green: 2, yellow: 3 };
+  const sorted = [...state.myHand].sort((a, b) => {
+    if (a.type === 'wild' || a.type === 'wild_draw4') return 1;
+    if (b.type === 'wild' || b.type === 'wild_draw4') return -1;
+    const ca = colorOrder[a.color] ?? 99;
+    const cb = colorOrder[b.color] ?? 99;
+    if (ca !== cb) return ca - cb;
+    return (typeof a.value === 'number' ? a.value : 10) - (typeof b.value === 'number' ? b.value : 10);
+  });
+
+  sorted.forEach(card => {
+    const el = createCardEl(card);
+    const isPlayable = state.playableCards.includes(card.id);
+    if (isPlayable) {
+      el.classList.add('playable');
+      el.addEventListener('click', () => playCard(card));
+    }
+    hand.appendChild(el);
+  });
+
+  // Action buttons (pass after draw)
+  const actBtns = $('actionButtons');
+  actBtns.innerHTML = '';
+  if (canPlayDrawnCard && state.isMyTurn) {
+    const passBtn = document.createElement('button');
+    passBtn.className = 'btn btn-small';
+    passBtn.style.background = 'var(--bg3)';
+    passBtn.style.color = 'var(--text)';
+    passBtn.textContent = 'Passen';
+    passBtn.addEventListener('click', () => {
+      canPlayDrawnCard = false;
+      socket.emit('passAfterDraw', currentRoom);
+    });
+    actBtns.appendChild(passBtn);
+  }
+
+  // Winner
+  if (state.state === 'finished' && state.winner) {
+    $('winnerOverlay').classList.add('active');
+    $('winnerName').textContent = state.winner + ' hat gewonnen!';
+    $('playAgainBtn').style.display = isHost ? 'inline-flex' : 'none';
+  } else {
+    $('winnerOverlay').classList.remove('active');
+  }
+}
+
+// ============ PLAY CARD ============
+function playCard(card) {
+  canPlayDrawnCard = false;
+  if (card.type === 'wild' || card.type === 'wild_draw4') {
+    pendingWildCard = card;
+    $('colorPickerModal').classList.add('active');
+  } else {
+    socket.emit('playCard', { roomCode: currentRoom, cardId: card.id });
+  }
+}
+
+// Color picker
+document.querySelectorAll('.color-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const color = btn.dataset.color;
+    if (pendingWildCard) {
+      socket.emit('playCard', {
+        roomCode: currentRoom,
+        cardId: pendingWildCard.id,
+        chosenColor: color
+      });
+      pendingWildCard = null;
+    }
+    $('colorPickerModal').classList.remove('active');
+  });
+});
+
+// ============ DRAW CARD ============
+$('deckPile').addEventListener('click', () => {
+  if (!currentState || !currentState.isMyTurn) return;
+  canPlayDrawnCard = false;
+  socket.emit('drawCard', currentRoom);
+});
+
+socket.on('canPlayDrawn', (data) => {
+  canPlayDrawnCard = true;
+  showToast('Du kannst die gezogene Karte spielen oder passen!');
+});
+
+// ============ FARBSTURM ============
+$('farbsturmBtn').addEventListener('click', () => {
+  socket.emit('sayFarbsturm', currentRoom);
+});
+
+function challengePlayer(targetId) {
+  socket.emit('challengeFarbsturm', { roomCode: currentRoom, targetId });
+}
+
+// ============ ACTIONS & TOASTS ============
+socket.on('action', (data) => {
+  switch (data.type) {
+    case 'skip':
+      showToast(`⊘ ${data.target} wird übersprungen!`);
+      break;
+    case 'reverse':
+      showToast('⇄ Richtung gewechselt!');
+      break;
+    case 'draw':
+      showToast(`📥 ${data.playerName} zieht ${data.count} Karte${data.count > 1 ? 'n' : ''}`);
+      break;
+    case 'farbsturm':
+      showToast(`🎴 ${data.playerName} ruft FARBSTURM!`);
+      break;
+    case 'challenge':
+      showToast(`❗ ${data.challengerName} erwischt ${data.targetName}! +2 Strafkarten!`);
+      break;
+  }
+});
+
+socket.on('cardPlayed', (data) => {
+  // Visual feedback handled by gameState update
+});
+
+socket.on('error', (msg) => {
+  showToast('⚠️ ' + msg);
+});
+
+// ============ PLAY AGAIN / BACK ============
+$('playAgainBtn').addEventListener('click', () => {
+  socket.emit('playAgain', currentRoom);
+  $('winnerOverlay').classList.remove('active');
+});
+
+$('backToMenuBtn').addEventListener('click', () => {
+  $('winnerOverlay').classList.remove('active');
+  currentRoom = null;
+  showScreen('menu');
+});
+
+// ============ RECONNECT HINT ============
+socket.on('disconnect', () => {
+  showToast('⚠️ Verbindung verloren! Lade die Seite neu.');
+});
+</script>
+</body>
+</html>
