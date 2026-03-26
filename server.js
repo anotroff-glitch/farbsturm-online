@@ -6,10 +6,26 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: '*' }
+  cors: { origin: '*' },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  transports: ['websocket', 'polling'],
+  allowUpgrades: true,
+  perMessageDeflate: false
+});
+
+// Health check endpoint (keeps Render from sleeping + mobile connection check)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', players: countPlayers(), rooms: rooms.size });
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+function countPlayers() {
+  let count = 0;
+  for (const [, room] of rooms) count += room.players.length;
+  return count;
+}
 
 // ============ GAME CONFIG ============
 const COLORS = ['red', 'blue', 'green', 'yellow'];
@@ -424,6 +440,9 @@ io.on('connection', (socket) => {
     room.winner = null;
     emitLobby(room);
   });
+
+  // Keep-alive ping from mobile clients
+  socket.on('ping', () => {});
 
   socket.on('disconnect', () => {
     console.log(`Getrennt: ${socket.id}`);
