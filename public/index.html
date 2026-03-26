@@ -866,15 +866,38 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 // ============ CONNECTION ============
-const socket = io();
+const socket = io({
+  reconnection: true,
+  reconnectionAttempts: 20,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 30000,
+  transports: ['websocket', 'polling']
+});
 let currentRoom = null;
 let isHost = false;
 let pendingWildCard = null;
 let myId = null;
 let canPlayDrawnCard = false;
 let currentState = null;
+let savedName = null;
+let savedRoom = null;
 
-socket.on('connect', () => { myId = socket.id; });
+socket.on('connect', () => {
+  myId = socket.id;
+  // Auto-rejoin room after reconnect
+  if (savedRoom && savedName) {
+    socket.emit('joinRoom', { name: savedName, code: savedRoom }, (res) => {
+      if (res.success) {
+        currentRoom = res.code;
+        showToast('✅ Wieder verbunden!');
+      } else {
+        showToast('⚠️ Raum nicht mehr verfügbar');
+        showScreen('menu');
+      }
+    });
+  }
+});
 
 // ============ DOM ELEMENTS ============
 const $ = id => document.getElementById(id);
@@ -951,6 +974,8 @@ $('createBtn').addEventListener('click', () => {
   socket.emit('createRoom', name, (res) => {
     if (res.success) {
       currentRoom = res.code;
+      savedName = name;
+      savedRoom = res.code;
       showScreen('lobby');
     } else {
       $('menuError').textContent = res.error;
@@ -967,6 +992,8 @@ $('joinBtn').addEventListener('click', () => {
   socket.emit('joinRoom', { name, code }, (res) => {
     if (res.success) {
       currentRoom = res.code;
+      savedName = name;
+      savedRoom = res.code;
       showScreen('lobby');
     } else {
       $('menuError').textContent = res.error;
@@ -1234,10 +1261,35 @@ $('backToMenuBtn').addEventListener('click', () => {
   showScreen('menu');
 });
 
-// ============ RECONNECT HINT ============
+// ============ RECONNECT HANDLING ============
 socket.on('disconnect', () => {
-  showToast('⚠️ Verbindung verloren! Lade die Seite neu.');
+  showToast('⚠️ Verbindung verloren – versuche neu zu verbinden...');
 });
+
+socket.on('reconnect', (attemptNumber) => {
+  showToast('✅ Verbunden! (Versuch ' + attemptNumber + ')');
+});
+
+socket.on('reconnect_attempt', (attemptNumber) => {
+  if (attemptNumber > 1) {
+    showToast('🔄 Verbindungsversuch ' + attemptNumber + '...');
+  }
+});
+
+socket.on('reconnect_failed', () => {
+  showToast('❌ Verbindung fehlgeschlagen – bitte Seite neu laden.');
+});
+
+socket.on('connect_error', (err) => {
+  console.log('Connection error:', err.message);
+});
+
+// Keep-alive: prevents mobile browsers from killing the connection
+setInterval(() => {
+  if (socket.connected) {
+    socket.emit('ping');
+  }
+}, 20000);
 </script>
 </body>
 </html>
